@@ -5,7 +5,7 @@ var Movie = Backbone.Model.extend({
   },
 
   toggleLike: function() {
-    // your code here
+    this.set('like', !this.get('like'));
   }
 
 });
@@ -14,14 +14,23 @@ var Movies = Backbone.Collection.extend({
 
   model: Movie,
 
+  //this initialize operates on every model in the collection,
+  //not the collection itself!
   initialize: function() {
-    // your code here
+    //Thus this event listener is saying we must sort when an attribute is changed
+    //eg: we are currently sorting by like, so when a like is registered we will
+    //re-sort immediately
+    this.on('change', this.sort, this);
+
   },
 
   comparator: 'title',
 
   sortByField: function(field) {
-    // your code here
+    this.comparator = field;
+    //We know it needs to re-sort when the comparator changes
+    //Without a change, additions are automatically sorted into the collection
+    this.sort();
   }
 
 });
@@ -57,16 +66,19 @@ var MovieView = Backbone.View.extend({
                           <div class="rating">Fan rating: <%- rating %> of 10</div> \
                         </div>'),
 
+  //Must call in the context of the View, not the views model.
+  //Otherwise the reference to this.render is to the model
   initialize: function() {
-    // your code here
+    this.model.on('change', this.render, this);
   },
 
   events: {
     'click button': 'handleClick'
   },
 
+  //Event handler is already attached through events property!
   handleClick: function() {
-    // your code here
+    this.model.toggleLike();
   },
 
   render: function() {
@@ -79,7 +91,9 @@ var MovieView = Backbone.View.extend({
 var MoviesView = Backbone.View.extend({
 
   initialize: function() {
-    // your code here
+    //Listener for whether the collection was just resorted
+    //Then we need to re-render
+    this.collection.on('sort', this.render, this);
   },
 
   render: function() {
